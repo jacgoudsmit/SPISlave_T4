@@ -8,6 +8,7 @@
 #define SLAVE_CFGR0 spiAddr[8]
 #define SLAVE_CFGR1 spiAddr[9]
 #define SLAVE_TDR spiAddr[25]
+#define SLAVE_RSR spiAddr[28]
 #define SLAVE_RDR spiAddr[29]
 #define SLAVE_SR spiAddr[5]
 #define SLAVE_TCR_REFRESH spiAddr[24] = (0UL << 27) | LPSPI_TCR_FRAMESZ(bits - 1)
@@ -87,7 +88,7 @@ SPISlave_T4_FUNC bool SPISlave_T4_OPT::active() {
 
 SPISlave_T4_FUNC bool SPISlave_T4_OPT::available() {
   SLAVE_PORT_ADDR;
-  return ( (SLAVE_SR & (1UL << 8)) ) ? 1 : 0;
+  return ( (SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
 }
 
 
