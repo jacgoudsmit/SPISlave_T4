@@ -1,8 +1,6 @@
 #if !defined(_SPISlave_T4_H_)
 #define _SPISlave_T4_H_
 
-#include "Arduino.h"
-#include "circular_buffer.h"
 #include <SPI.h>
 
 typedef enum SPI_BITS {
@@ -51,5 +49,4 @@ SPISlave_T4_CLASS class SPISlave_T4 : public SPISlave_T4_Base {
     bool sniffer_enabled = 0;
 };
 
-#include "SPISlave_T4.tpp"
 #endif

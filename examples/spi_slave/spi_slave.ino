@@ -1,4 +1,5 @@
-#include <SPISlave_T4.h>
+#include "SPISlave_T4.h"
+
 SPISlave_T4<&SPI, SPI_8_BITS> mySPI;
 
 void setup() {

@@ -1,6 +1,5 @@
-#include <SPISlave_T4.h>
-#include "Arduino.h"
-#include "SPI.h"
+#include <Arduino.h>
+#include "SPISlave_T4.h"
 
 #define SLAVE_CR spiAddr[4]
 #define SLAVE_FCR spiAddr[22]
@@ -88,7 +87,7 @@ SPISlave_T4_FUNC bool SPISlave_T4_OPT::active() {
 
 SPISlave_T4_FUNC bool SPISlave_T4_OPT::available() {
   SLAVE_PORT_ADDR;
-  return ( !(SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
+  return ( (SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
 }
 
 
