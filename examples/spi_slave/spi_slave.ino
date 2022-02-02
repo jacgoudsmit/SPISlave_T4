@@ -1,6 +1,6 @@
 #include "SPISlave_T4.h"
 
-SPISlave_T4<&SPI, SPI_8_BITS> mySPI;
+SPISlave_T4 mySPI(&SPI, SPI_8_BITS);
 
 void setup() {
   Serial.begin(115200);

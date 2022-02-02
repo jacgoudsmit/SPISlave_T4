@@ -10,17 +10,23 @@
 #define SLAVE_RSR spiAddr[28]
 #define SLAVE_RDR spiAddr[29]
 #define SLAVE_SR spiAddr[5]
-#define SLAVE_TCR_REFRESH spiAddr[24] = (0UL << 27) | LPSPI_TCR_FRAMESZ(bits - 1)
+#define SLAVE_TCR_REFRESH spiAddr[24] = (0UL << 27) | LPSPI_TCR_FRAMESZ(_bits - 1)
 #define SLAVE_PORT_ADDR volatile uint32_t *spiAddr = &(*(volatile uint32_t*)(0x40394000 + (0x4000 * _portnum)))
 #define SLAVE_PINS_ADDR volatile uint32_t *spiAddr = &(*(volatile uint32_t*)(0x401F84EC + (_portnum * 0x10)))
 
- 
+//static SPISlave_T4_Base* _LPSPI1 = nullptr;
+//static SPISlave_T4_Base* _LPSPI2 = nullptr;
+//static SPISlave_T4_Base* _LPSPI3 = nullptr;
+static SPISlave_T4_Base* _LPSPI4 = nullptr;
+
 void lpspi4_slave_isr() {
   _LPSPI4->SLAVE_ISR();
 }
 
 
-SPISlave_T4_FUNC SPISlave_T4_OPT::SPISlave_T4() {
+SPISlave_T4::SPISlave_T4(SPIClass* port, SPI_BITS bits) {
+  _port = port;
+  _bits = bits;
   if ( port == &SPI ) {
     _LPSPI4 = this;
     _portnum = 3;
@@ -42,7 +48,7 @@ SPISlave_T4_FUNC SPISlave_T4_OPT::SPISlave_T4() {
 }
 
 
-SPISlave_T4_FUNC void SPISlave_T4_OPT::swapPins(bool enable) {
+void SPISlave_T4::swapPins(bool enable) {
   SLAVE_PORT_ADDR;
   SLAVE_CR &= ~LPSPI_CR_MEN; /* Disable Module */
   SLAVE_CFGR1 = (SLAVE_CFGR1 & 0xFCFFFFFF) | (enable) ? (3UL << 24) : (0UL << 24);
@@ -51,10 +57,10 @@ SPISlave_T4_FUNC void SPISlave_T4_OPT::swapPins(bool enable) {
 }
 
 
-SPISlave_T4_FUNC void SPISlave_T4_OPT::sniffer(bool enable) {
+void SPISlave_T4::sniffer(bool enable) {
   SLAVE_PORT_ADDR;
   sniffer_enabled = enable;
-  if ( port == &SPI ) {
+  if ( _port == &SPI ) {
     if ( sniffer_enabled ) {
       if ( SLAVE_CFGR1 & (3UL << 24) ) { /* if pins are swapped */
         IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03 = 0x3; /* LPSPI4 SCK (CLK) */
@@ -79,25 +85,25 @@ SPISlave_T4_FUNC void SPISlave_T4_OPT::sniffer(bool enable) {
 }
 
 
-SPISlave_T4_FUNC bool SPISlave_T4_OPT::active() {
+bool SPISlave_T4::active() {
   SLAVE_PORT_ADDR;
   return ( !(SLAVE_SR & (1UL << 9)) ) ? 1 : 0;
 }
 
 
-SPISlave_T4_FUNC bool SPISlave_T4_OPT::available() {
+bool SPISlave_T4::available() {
   SLAVE_PORT_ADDR;
   return ( (SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
 }
 
 
-SPISlave_T4_FUNC void SPISlave_T4_OPT::pushr(uint32_t data) {
+void SPISlave_T4::pushr(uint32_t data) {
   SLAVE_PORT_ADDR;
   SLAVE_TDR = data;
 }
 
 
-SPISlave_T4_FUNC uint32_t SPISlave_T4_OPT::popr() {
+uint32_t SPISlave_T4::popr() {
   SLAVE_PORT_ADDR;
   uint32_t data = SLAVE_RDR;
   SLAVE_SR = (1UL << 8); /* Clear WCF */
@@ -105,7 +111,7 @@ SPISlave_T4_FUNC uint32_t SPISlave_T4_OPT::popr() {
 }
 
 
-SPISlave_T4_FUNC void SPISlave_T4_OPT::SLAVE_ISR() {
+void SPISlave_T4::SLAVE_ISR() {
 
   SLAVE_PORT_ADDR;
 
@@ -134,7 +140,7 @@ SPISlave_T4_FUNC void SPISlave_T4_OPT::SLAVE_ISR() {
 }
 
 
-SPISlave_T4_FUNC void SPISlave_T4_OPT::begin() {
+void SPISlave_T4::begin() {
   SLAVE_PORT_ADDR;
   SLAVE_CR = LPSPI_CR_RST; /* Reset Module */
   SLAVE_CR = 0; /* Disable Module */
