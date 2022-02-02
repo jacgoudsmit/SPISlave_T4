@@ -88,7 +88,7 @@ SPISlave_T4_FUNC bool SPISlave_T4_OPT::active() {
 
 SPISlave_T4_FUNC bool SPISlave_T4_OPT::available() {
   SLAVE_PORT_ADDR;
-  return ( (SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
+  return ( !(SLAVE_RSR & (1UL << 1)) ) ? 1 : 0;
 }
 
 
