@@ -91,10 +91,10 @@ void SPISlave_T4::sniffer(bool enable) {
   if ( _port == &SPI ) {
     if ( sniffer_enabled ) {
       if ( SLAVE_CFGR1 & (3UL << 24) ) { /* if pins are swapped */
-        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03 = 0x3; // LPSPI4 SCK (CLK) 13 ALT3
+        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03 = 0x3;  // LPSPI4 SCK (CLK) 13 ALT3
         IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_01 = 0x13; // LPSPI_SDI (MISO) 12 ALT3+SION Not sure, see 11.7.76 p509 (JG) // 0; // LPSPI4 SDI (MISO) 12 ALT0 LCD_ENABLE? See comment above swapPins()
-        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_02 = 0x3; // LPSPI4 SDO (MOSI) 11 ALT3
-        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00 = 0x3; // LPSPI4 PCS0 (CS) 10 ALT3
+        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_02 = 0x3;  // LPSPI4 SDO (MOSI) 11 ALT3
+        IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_00 = 0x3;  // LPSPI4 PCS0 (CS) 10 ALT3
 
         // IOMUXC_SW_MUX_CTL_PAD_GPIO_SD_B0_01 = 0x14; // LPSPI2_PCS0 (CS2) 36 ALT4 + SION. See: https://forum.pjrc.com/archive/index.php/t-59893.html
         // IOMUXC_SW_MUX_CTL_PAD_GPIO_SD_B0_00 = 0x14; // LPSPI2_SCK1 (CLK2) 37 ALT4 + SION
