@@ -51,5 +51,5 @@ SPISlave_T4_CLASS class SPISlave_T4 : public SPISlave_T4_Base {
     bool sniffer_enabled = 0;
 };
 
-#include "SPISlave_T4.tpp"
+#include <SPISlave_T4.tpp>
 #endif

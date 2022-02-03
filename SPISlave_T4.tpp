@@ -125,7 +125,7 @@ SPISlave_T4_FUNC void SPISlave_T4_OPT::SLAVE_ISR() {
     if ( (SLAVE_SR & (1UL << 8)) ) { /* WCF set */
       uint32_t val = SLAVE_RDR;
       Serial.print(val); Serial.print(" ");
-      SLAVE_TDR = val;
+      //SLAVE_TDR = val;
       SLAVE_SR = (1UL << 8); /* Clear WCF */
     }
   }
@@ -140,7 +140,7 @@ SPISlave_T4_FUNC void SPISlave_T4_OPT::begin() {
   SLAVE_CR = LPSPI_CR_RST; /* Reset Module */
   SLAVE_CR = 0; /* Disable Module */
   SLAVE_FCR = 0;//x10001; /* 1x watermark for RX and TX */
-  SLAVE_IER = 0x1; /* RX Interrupt */
+  SLAVE_IER = 0x2; /* RX Interrupt */
   SLAVE_CFGR0 = 0;
   SLAVE_CFGR1 = 0;
   SLAVE_CR |= LPSPI_CR_MEN | LPSPI_CR_DBGEN; /* Enable Module, Debug Mode */

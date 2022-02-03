@@ -5,7 +5,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
   mySPI.begin();
-  //    mySPI.onReceive(myFunc);
+  mySPI.onReceive(myFunc);
 }
 
 void loop() {
@@ -20,9 +20,9 @@ void myFunc() {
   while ( mySPI.active() ) {
     if (mySPI.available()) {
       if ( i++ > sizeof(arr) ) i = 0;
-      mySPI.pushr(arr[i]);
+      //mySPI.pushr(arr[i]);
       Serial.print("VALUE: ");
-      Serial.println(mySPI.popr());
+      Serial.println(mySPI.popr(), HEX);
     }
   }
   Serial.println("END");
