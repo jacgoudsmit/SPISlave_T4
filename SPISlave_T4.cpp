@@ -1,12 +1,14 @@
 #include <Arduino.h>
 #include "SPISlave_T4.h"
 
-// 11.7.323 LPSPI4_PCS0_SELECT_INPUT DAISY Register (IOMUXC_LPSPI4_PCS0_SELECT_INPUT) 401F_851Ch (Baseaddr + (_portnum * 0x10))
-#define SLAVE_PINS_ADDR volatile uint32_t *spiAddr = &(*(volatile uint32_t*)(0x401F84EC + (portnum * 0x10)))
-
-static SPISlave_T4* _LPSPI1 = nullptr;
-static SPISlave_T4* _LPSPI3 = nullptr;
-static SPISlave_T4* _LPSPI4 = nullptr;
+// Static pointers to the instances. The numbers are the LPSPI port numbers,
+// not the Arduino / Teensy port numbers that are printed on the pinout
+// card from PJRC. The static pointers are needed so the interrupt service
+// routines know which instance of our class to call.
+// Note: LPSPI 2 is not available.
+static SPISlave_T4* _LPSPI1 = nullptr; // Arduino / Teensy port 2
+static SPISlave_T4* _LPSPI3 = nullptr; // Arduino / Teensy port 1
+static SPISlave_T4* _LPSPI4 = nullptr; // Arduino / Teensy port 0
 
 void lpspi1_slave_isr() {
   _LPSPI1->SLAVE_ISR();
@@ -21,6 +23,7 @@ void lpspi4_slave_isr() {
 SPISlave_T4::SPISlave_T4(unsigned portnum, SPI_BITS bits) {
   _SPI_ptr isr = nullptr; // Interrupt service routine address
   uint32_t cg = 0; // Clock gate value
+  volatile uint32_t *iomuxc_base = nullptr; // IO multiplexer registers for SCK/SDI/SDO/PCS0
 
   _bits = bits;
 
@@ -29,9 +32,9 @@ SPISlave_T4::SPISlave_T4(unsigned portnum, SPI_BITS bits) {
     // The order of the Arduino SPI port numbers doesn't correspond to the
     // LPSPI port numbers
     // See e.g.: https://forum.pjrc.com/threads/61234-Teensy-4-1-and-SPI2
-    case 0: _LPSPI4 = this; _lpspi = &IMXRT_LPSPI4_S; nvic_irq = IRQ_LPSPI4; isr = lpspi4_slave_isr; cg = CCM_CCGR1_LPSPI4(3); break;
-    case 1: _LPSPI3 = this; _lpspi = &IMXRT_LPSPI3_S; nvic_irq = IRQ_LPSPI3; isr = lpspi3_slave_isr; cg = CCM_CCGR1_LPSPI3(3); break;
-    case 2: _LPSPI1 = this; _lpspi = &IMXRT_LPSPI1_S; nvic_irq = IRQ_LPSPI1; isr = lpspi1_slave_isr; cg = CCM_CCGR1_LPSPI1(3); break;
+    case 0: _LPSPI4 = this; _lpspi = &IMXRT_LPSPI4_S; nvic_irq = IRQ_LPSPI4; isr = lpspi4_slave_isr; cg = CCM_CCGR1_LPSPI4(CCM_CCGR_ON); iomuxc_base = &IOMUXC_LPSPI4_PCS0_SELECT_INPUT; break;
+    case 1: _LPSPI3 = this; _lpspi = &IMXRT_LPSPI3_S; nvic_irq = IRQ_LPSPI3; isr = lpspi3_slave_isr; cg = CCM_CCGR1_LPSPI3(CCM_CCGR_ON); iomuxc_base = &IOMUXC_LPSPI3_PCS0_SELECT_INPUT; break;
+    case 2: _LPSPI1 = this; _lpspi = &IMXRT_LPSPI1_S; nvic_irq = IRQ_LPSPI1; isr = lpspi1_slave_isr; cg = CCM_CCGR1_LPSPI1(CCM_CCGR_ON); iomuxc_base = &IOMUXC_LPSPI1_PCS0_SELECT_INPUT; break;
   }
 
   // Clock gating register, see 14.7.22 p1085
@@ -45,11 +48,11 @@ SPISlave_T4::SPISlave_T4(unsigned portnum, SPI_BITS bits) {
   attachInterruptVector(nvic_irq, isr);
 
   /* Alternate pins not broken out on Teensy 4.0/4.1 for LPSPI4 */
-  SLAVE_PINS_ADDR; // TODO: tidy up for ports other than LPSPI4
-  spiAddr[0] = 0; // IOMUXC_LPSPIx_PCS0_SELECT_INPUT. For LSPCI4: (401F_851Ch) 0=GPIO_B0_00_ALT3 1=GPIO_B1_04_ALT1
-  spiAddr[1] = 0; // IOMUXC_LPSPIx_SCK_SELECT_INPUT . For LSPCI4: (401F_8520h) 0=GPIO_B0_03_ALT3 1=GPIO_B1_07_ALT1
-  spiAddr[2] = 0; // IOMUXC_LPSPIx_SDI_SELECT_INPUT . For LSPCI4: (401F_8524h) 0=GPIO_B0_02_ALT3 1=GPIO_B1_05_ALT1
-  spiAddr[3] = 0; // IOMUXC_LPSPIx_SDO_SELECT_INPUT . For LSPCI4: (401F_8528h) 0=GPIO_B0_02_ALT3 1=GPIO_B1_06_ALT1
+  // 11.7.323 LPSPI4_PCS0_SELECT_INPUT DAISY Register (IOMUXC_LPSPI4_PCS0_SELECT_INPUT) 401F_851Ch (Baseaddr + (_portnum * 0x10))
+  iomuxc_base[0] = 0; // IOMUXC_LPSPIx_PCS0_SELECT_INPUT. For LSPCI4: (401F_851Ch) 0=GPIO_B0_00_ALT3 1=GPIO_B1_04_ALT1
+  iomuxc_base[1] = 0; // IOMUXC_LPSPIx_SCK_SELECT_INPUT . For LSPCI4: (401F_8520h) 0=GPIO_B0_03_ALT3 1=GPIO_B1_07_ALT1
+  iomuxc_base[2] = 0; // IOMUXC_LPSPIx_SDI_SELECT_INPUT . For LSPCI4: (401F_8524h) 0=GPIO_B0_02_ALT3 1=GPIO_B1_05_ALT1
+  iomuxc_base[3] = 0; // IOMUXC_LPSPIx_SDO_SELECT_INPUT . For LSPCI4: (401F_8528h) 0=GPIO_B0_02_ALT3 1=GPIO_B1_06_ALT1
 
   // These are the primary SPI mux control registers.
   IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03 = 0x3; // LPSPI4 SCK (CLK) 13 ALT3
@@ -172,7 +175,7 @@ void SPISlave_T4::SLAVE_ISR() {
 }
 
 
-void SPISlave_T4::begin() {
+void SPISlave_T4::begin(uint8_t bitOrder, uint8_t dataMode) {
   _lpspi->CR = LPSPI_CR_RST;// Reset Module
   _lpspi->CR = 0;           // Disable Module
   _lpspi->FCR = LPSPI_FCR_RXWATER(0) | LPSPI_FCR_TXWATER(0); // x10001; // Watermark for RX and TX
@@ -181,8 +184,12 @@ void SPISlave_T4::begin() {
   _lpspi->CFGR1 = 0;        // slave, sample on SCK rising edge, !autoPCS (must raise CS between frames), FIFO will stall, CS active low, match disabled,
   _lpspi->CR |= LPSPI_CR_MEN /*| LPSPI_CR_DBGEN*/; /* Enable Module, Debug Mode */
   _lpspi->SR = LPSPI_SR_DMF | LPSPI_SR_REF | LPSPI_SR_TEF | LPSPI_SR_TCF | LPSPI_SR_FCF | LPSPI_SR_WCF; // Clear status register
-  _lpspi->TCR = LPSPI_TCR_FRAMESZ(_bits - 1); // TODO: CPOL/CPHA/LSBF
+  _lpspi->TCR = LPSPI_TCR_FRAMESZ(_bits - 1) 
+    | (!!(dataMode & 2) ? LPSPI_TCR_CPOL : 0)
+    | (!!(dataMode & 1) ? LPSPI_TCR_CPHA : 0)
+    | (!!(bitOrder == LSBFIRST) ? LPSPI_TCR_LSBF : 0);
   _lpspi->TDR = 0x0;        // dummy data, must populate initial TX slot
   NVIC_ENABLE_IRQ(nvic_irq);
   NVIC_SET_PRIORITY(nvic_irq, 1);
 }
+

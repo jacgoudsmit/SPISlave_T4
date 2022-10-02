@@ -11,13 +11,12 @@ typedef enum SPI_BITS {
 
 typedef void (*_SPI_ptr)();
 
-extern SPIClass SPI;
-
 class SPISlave_T4 {
   public:
-    SPISlave_T4(unsigned portnum, SPI_BITS bits);  // NOTE: Only portnum=0 is currently supported
-    void begin();
-    uint32_t transmitErrors();
+    SPISlave_T4(unsigned portnum, SPI_BITS bits);
+    void begin(uint8_t bitOrder = MSBFIRST, uint8_t dataMode = SPI_MODE0);
+
+    uint32_t transmitErrors() { return transmit_errors; }
     void onReceive(_SPI_ptr handler) { _spihandler = handler; }
     bool active();
     bool available();

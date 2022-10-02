@@ -5,8 +5,9 @@ SPISlave_T4 mySPI(0, SPI_8_BITS);
 void setup() {
   Serial.begin(115200);
   while (!Serial);
-  mySPI.begin();
-  //    mySPI.onReceive(myFunc);
+  Serial.println("Hello World!");
+  mySPI.begin(LSBFIRST, SPI_MODE3);
+  mySPI.onReceive(myFunc);
 }
 
 void loop() {
@@ -15,10 +16,10 @@ void loop() {
 }
 
 void myFunc() {
-  //Serial.println("START: ");
+  Serial.print("[");
   while ( mySPI.available() ) {
-    Serial.print("VALUE: ");
-    Serial.println(mySPI.popr(), HEX);
+    Serial.print((char)mySPI.popr());
+    //Serial.println(mySPI.popr(), HEX);
   }
-  //Serial.println("END");
+  Serial.println("]");
 }
